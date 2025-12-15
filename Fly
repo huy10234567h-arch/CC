@@ -1,0 +1,81 @@
+local player = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local camera = workspace.CurrentCamera
+
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+
+local flyButton = Instance.new("TextButton", gui)
+flyButton.Size = UDim2.new(0, 120, 0, 50)
+flyButton.Position = UDim2.new(0.8, 0, 0.85, 0)
+flyButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+flyButton.TextColor3 = Color3.new(1,1,1)
+flyButton.Text = "BẬT BAY"
+flyButton.AutoButtonColor = true
+flyButton.TextScaled = true
+
+-- Logic bay
+local flying = false
+local speed = 50
+local bodyGyro, bodyVelocity
+local keys = {W=false, A=false, S=false, D=false, Space=false, Ctrl=false}
+
+local function getChar()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char, char:WaitForChild("HumanoidRootPart")
+end
+
+-- Touch controls (Virtual buttons can control keys if muốn)
+-- Ở đây dùng một nút Fly toggle duy nhất
+
+local function startFly()
+    local char, hrp = getChar()
+    bodyGyro = Instance.new("BodyGyro", hrp)
+    bodyGyro.P = 9e4
+    bodyGyro.MaxTorque = Vector3.new(9e9,9e9,9e9)
+    bodyGyro.CFrame = hrp.CFrame
+
+    bodyVelocity = Instance.new("BodyVelocity", hrp)
+    bodyVelocity.MaxForce = Vector3.new(9e9,9e9,9e9)
+end
+
+local function stopFly()
+    if bodyGyro then bodyGyro:Destroy() end
+    if bodyVelocity then bodyVelocity:Destroy() end
+end
+
+-- Bay theo camera + phím giả lập trên mobile
+RunService.RenderStepped:Connect(function()
+    if not flying or not bodyVelocity then return end
+    local char, hrp = getChar()
+
+    -- Di chuyển thẳng theo camera
+    local move = Vector3.new(0,0,0)
+    -- Nếu muốn, bạn có thể thêm nút riêng trên màn hình để W/A/S/D/Space/Ctrl
+    -- Hiện tại, bay tự do khi bật
+    move = camera.CFrame.LookVector + Vector3.new(0,0.5,0)  -- hướng bay lên một chút
+
+    bodyVelocity.Velocity = move * speed
+    bodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + camera.CFrame.LookVector)
+end)
+
+-- Nút toggle bay
+flyButton.MouseButton1Click:Connect(function()
+    flying = not flying
+    if flying then
+        startFly()
+        flyButton.Text = "TẮT BAY"
+        flyButton.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+    else
+        stopFly()
+        flyButton.Text = "BẬT BAY"
+        flyButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+    end
+end)
+
+-- Reset khi chết
+player.CharacterAdded:Connect(function()
+    flying = false
+    stopFly()
+end)
