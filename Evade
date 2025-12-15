@@ -1,0 +1,110 @@
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local plr = Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+local root = char:WaitForChild("HumanoidRootPart")
+
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "EvadeGui"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,220,0,260)
+frame.Position = UDim2.new(0,30,0,200)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Active = true
+frame.Draggable = true
+
+local function createBtn(text,y)
+	local b = Instance.new("TextButton", frame)
+	b.Size = UDim2.new(1,-20,0,35)
+	b.Position = UDim2.new(0,10,0,y)
+	b.Text = text
+	b.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	b.TextColor3 = Color3.new(1,1,1)
+	return b
+end
+
+local flyBtn     = createBtn("FLY : OFF",10)
+local speedBtn   = createBtn("SPEED : OFF",50)
+local noclipBtn  = createBtn("NOCLIP : OFF",90)
+local espBtn     = createBtn("BOT ESP : OFF",130)
+local dodgeBtn   = createBtn("AUTO DODGE : OFF",170)
+
+-- SPEED
+local speedOn = false
+speedBtn.MouseButton1Click:Connect(function()
+	speedOn = not speedOn
+	hum.WalkSpeed = speedOn and 50 or 16
+	speedBtn.Text = speedOn and "SPEED : ON" or "SPEED : OFF"
+end)
+
+-- NOCLIP
+local noclip = false
+RunService.Stepped:Connect(function()
+	if noclip then
+		for _,v in pairs(char:GetDescendants()) do
+			if v:IsA("BasePart") then v.CanCollide = false end
+		end
+	end
+end)
+
+noclipBtn.MouseButton1Click:Connect(function()
+	noclip = not noclip
+	noclipBtn.Text = noclip and "NOCLIP : ON" or "NOCLIP : OFF"
+end)
+
+-- FLY
+local flying = false
+local bv,bg
+flyBtn.MouseButton1Click:Connect(function()
+	flying = not flying
+	flyBtn.Text = flying and "FLY : ON" or "FLY : OFF"
+
+	if flying then
+		bv = Instance.new("BodyVelocity",root)
+		bg = Instance.new("BodyGyro",root)
+		bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+		bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
+	else
+		if bv then bv:Destroy() end
+		if bg then bg:Destroy() end
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if flying then
+		local cam = workspace.CurrentCamera
+		bg.CFrame = cam.CFrame
+		local dir = Vector3.zero
+		if UIS:IsKeyDown(Enum.KeyCode.W) then dir += cam.CFrame.LookVector end
+		if UIS:IsKeyDown(Enum.KeyCode.S) then dir -= cam.CFrame.LookVector end
+		if UIS:IsKeyDown(Enum.KeyCode.A) then dir -= cam.CFrame.RightVector end
+		if UIS:IsKeyDown(Enum.KeyCode.D) then dir += cam.CFrame.RightVector end
+		if UIS:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
+		bv.Velocity = dir * 60
+	end
+end)
+
+-- BOT ESP
+local espOn = false
+local espCache = {}
+
+local function clearESP()
+	for _,v in pairs(espCache) do
+		if v then v:Destroy() end
+	end
+	espCache = {}
+end
+
+espBtn.MouseButton1Click:Connect(function()
+	espOn = not espOn
+	espBtn.Text = espOn and "BOT ESP : ON" or "BOT ESP : OFF"
+	clearESP()
+
+	if espOn then
+		for
